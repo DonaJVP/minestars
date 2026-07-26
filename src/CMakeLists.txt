@@ -405,7 +405,6 @@ include_directories(
 	${PNG_INCLUDE_DIR}
 	${SOUND_INCLUDE_DIRS}
 	${SQLITE3_INCLUDE_DIR}
-	${LUA_INCLUDE_DIR}
 	${CHACHA_INCLUDE_DIR}
 	${GMP_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
@@ -442,21 +441,9 @@ if(BUILD_SERVER)
 		${LUA_LIBRARY}
 		${GMP_LIBRARY}
 		${PLATFORM_LIBS}
-		luautf8
-		luachacha
-		chacha
-		lua
 		asmjit
 	)
-	set_target_properties(${PROJECT_NAME}server PROPERTIES
-		COMPILE_DEFINITIONS "SERVER")
-	if(NOT USE_LUAJIT)
-		set_target_properties(${PROJECT_NAME}server PROPERTIES
-			# This is necessary for dynamic Lua modules
-			# to work when Lua is statically linked (issue #10806)
-			ENABLE_EXPORTS 1
-		)
-	endif()
+	set_target_properties(${PROJECT_NAME}server PROPERTIES COMPILE_DEFINITIONS "SERVER")
 
 	if (USE_GETTEXT)
 		target_link_libraries(${PROJECT_NAME}server ${GETTEXT_LIBRARY})
@@ -487,8 +474,6 @@ if(BUILD_SERVER)
 	endif()
 endif(BUILD_SERVER)
 
-
-
 # Blacklisted locales that don't work.
 # see issue #4638
 set(GETTEXT_BLACKLISTED_LOCALES
@@ -515,203 +500,40 @@ endif()
 
 include(CheckCSourceCompiles)
 
-if(MSVC)
-	# Visual Studio
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D WIN32_LEAN_AND_MEAN")
-	# EHa enables SEH exceptions (used for catching segfaults)
-	set(CMAKE_CXX_FLAGS_RELEASE "/EHa /Ox /MD /GS- /Zi /fp:fast /D NDEBUG /D _HAS_ITERATOR_DEBUGGING=0")
-	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /arch:SSE")
-	endif()
-
-	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/INCREMENTAL:NO /DEBUG /OPT:REF /OPT:ICF /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
-
-	set(CMAKE_CXX_FLAGS_SEMIDEBUG "/MDd /Zi /Ob0 /O1 /RTC1")
-
-	# Debug build doesn't catch exceptions by itself
-	# Add some optimizations because otherwise it's VERY slow
-	set(CMAKE_CXX_FLAGS_DEBUG "/MDd /Zi /Ob0 /Od /RTC1")
-
-	# Flags for C files (sqlite)
-	# /MD = dynamically link to MSVCRxxx.dll
-	set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /MD")
-
-	# Flags that cannot be shared between cl and clang-cl
-	# https://clang.llvm.org/docs/UsersManual.html#clang-cl
-	if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fuse-ld=lld")
-
-		# Disable pragma-pack warning
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wno-pragma-pack")
-	else()
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /TP /FD /GL")
-		set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG")
-	endif()
+# GCC or compatible compilers such as Clang
+if(WARN_ALL)
+	set(RELEASE_WARNING_FLAGS "-Wall")
 else()
-	# GCC or compatible compilers such as Clang
-	if(WARN_ALL)
-		set(RELEASE_WARNING_FLAGS "-Wall")
-	else()
-		set(RELEASE_WARNING_FLAGS "")
-	endif()
-	if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-		set(WARNING_FLAGS "${WARNING_FLAGS} -Wsign-compare")
-	endif()
-
-	if(APPLE AND USE_LUAJIT)
-		# required per http://luajit.org/install.html
-		SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000")
-	elseif(UNIX AND USE_LUAJIT)
-		check_c_source_compiles("#ifndef __aarch64__\n#error\n#endif\nint main(){}" IS_AARCH64)
-		if(IS_AARCH64)
-			# Move text segment below LuaJIT's 47-bit limit (see issue #9367)
-			SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Ttext-segment=0x200000000")
-		endif()
-	endif()
-
-	if(MINGW)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32_LEAN_AND_MEAN")
-	endif()
-
-	# Use a safe subset of flags to speed up math calculations:
-	# - we don't need errno or math exceptions
-	# - we don't deal with Inf/NaN or signed zero
-	set(MATH_FLAGS "-fno-math-errno -fno-trapping-math -ffinite-math-only -fno-signed-zeros")
-
-	set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -Wall -pipe -funroll-loops")
-	if(CMAKE_SYSTEM_NAME MATCHES "(Darwin|BSD|DragonFly)")
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
-	else()
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
-		if(CMAKE_SYSTEM_NAME STREQUAL "Linux"
-				AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
-				AND CMAKE_CXX_COMPILER_VERSION MATCHES "^9\\.")
-			# Clang 9 has broken -ffast-math on glibc
-		else()
-			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MATH_FLAGS}")
-		endif()
-	endif(CMAKE_SYSTEM_NAME MATCHES "(Darwin|BSD|DragonFly)")
-	set(CMAKE_CXX_FLAGS_SEMIDEBUG "-g -O1 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
-	set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
-
-	if(USE_GPROF)
-		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
-	endif()
-
-	if(MINGW)
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -mwindows")
-	endif()
+	set(RELEASE_WARNING_FLAGS "")
+endif()
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	set(WARNING_FLAGS "${WARNING_FLAGS} -Wsign-compare")
 endif()
 
+# Use a safe subset of flags to speed up math calculations:
+# - we don't need errno or math exceptions
+# - we don't deal with Inf/NaN or signed zero
+set(MATH_FLAGS "-fno-math-errno -fno-trapping-math -ffinite-math-only -fno-signed-zeros")
 
-# Installation
-
-if(WIN32)
-	if(VCPKG_APPLOCAL_DEPS)
-		# Collect the dll's from the output path
-		install(DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/Release/
-				DESTINATION ${BINDIR}
-				CONFIGURATIONS Release
-				FILES_MATCHING PATTERN "*.dll")
-		install(DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/Debug/
-				DESTINATION ${BINDIR}
-				CONFIGURATIONS Debug
-				FILES_MATCHING PATTERN "*.dll")
-		install(DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/RelWithDebInfo/
-				DESTINATION ${BINDIR}
-				CONFIGURATIONS RelWithDebInfo
-				FILES_MATCHING PATTERN "*.dll")
-		install(DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/MinSizeRel/
-				DESTINATION ${BINDIR}
-				CONFIGURATIONS MinSizeRel
-				FILES_MATCHING PATTERN "*.dll")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -Wall -pipe -funroll-loops")
+if(CMAKE_SYSTEM_NAME MATCHES "(Darwin|BSD|DragonFly)")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
+else()
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
+	if(CMAKE_SYSTEM_NAME STREQUAL "Linux"
+			AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
+			AND CMAKE_CXX_COMPILER_VERSION MATCHES "^9\\.")
+		# Clang 9 has broken -ffast-math on glibc
 	else()
-		# Use the old-style way to install dll's
-		if(USE_SOUND)
-			if(OPENAL_DLL)
-				install(FILES ${OPENAL_DLL} DESTINATION ${BINDIR})
-			endif()
-			if(OGG_DLL)
-				install(FILES ${OGG_DLL} DESTINATION ${BINDIR})
-			endif()
-			if(VORBIS_DLL)
-				install(FILES ${VORBIS_DLL} DESTINATION ${BINDIR})
-			endif()
-			if(VORBISFILE_DLL)
-				install(FILES ${VORBISFILE_DLL} DESTINATION ${BINDIR})
-			endif()
-		endif()
-		if(CURL_DLL)
-			install(FILES ${CURL_DLL} DESTINATION ${BINDIR})
-		endif()
-		if(ZLIB_DLL)
-			install(FILES ${ZLIB_DLL} DESTINATION ${BINDIR})
-		endif()
-		if(FREETYPE_DLL)
-			install(FILES ${FREETYPE_DLL} DESTINATION ${BINDIR})
-		endif()
-		if(SQLITE3_DLL)
-			install(FILES ${SQLITE3_DLL} DESTINATION ${BINDIR})
-		endif()
-		if(LEVELDB_DLL)
-			install(FILES ${LEVELDB_DLL} DESTINATION ${BINDIR})
-		endif()
-		if(LUA_DLL)
-			install(FILES ${LUA_DLL} DESTINATION ${BINDIR})
-		endif()
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MATH_FLAGS}")
 	endif()
+endif(CMAKE_SYSTEM_NAME MATCHES "(Darwin|BSD|DragonFly)")
+set(CMAKE_CXX_FLAGS_SEMIDEBUG "-g -O1 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
+
+if(USE_GPROF)
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
 endif()
-
-if(BUILD_CLIENT)
-	install(TARGETS ${PROJECT_NAME}
-		RUNTIME DESTINATION ${BINDIR}
-		LIBRARY DESTINATION ${BINDIR}
-		ARCHIVE DESTINATION ${BINDIR}
-		BUNDLE DESTINATION .
-	)
-
-	if(APPLE)
-		install(CODE "
-			set(BU_CHMOD_BUNDLE_ITEMS ON)
-			include(BundleUtilities)
-			fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/${BUNDLE_PATH}\" \"\" \"\${CMAKE_INSTALL_PREFIX}/${BINDIR}\")
-		" COMPONENT Runtime)
-	endif()
-
-	if(USE_GETTEXT)
-		foreach(LOCALE ${GETTEXT_USED_LOCALES})
-			set_mo_paths(MO_BUILD_PATH MO_DEST_PATH ${LOCALE})
-			set(MO_BUILD_PATH "${MO_BUILD_PATH}/minetest.mo")
-			install(FILES ${MO_BUILD_PATH} DESTINATION ${MO_DEST_PATH})
-		endforeach()
-	endif()
-
-	if(USE_FREETYPE)
-		install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../fonts" DESTINATION "${SHAREDIR}"
-				FILES_MATCHING PATTERN "*.ttf" PATTERN "*.txt")
-	else()
-		install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../fonts" DESTINATION "${SHAREDIR}"
-				FILES_MATCHING PATTERN "*.png" PATTERN "*.xml")
-	endif()
-
-	if(WIN32)
-		if(NOT VCPKG_APPLOCAL_DEPS)
-			if(DEFINED IRRLICHT_DLL)
-				install(FILES ${IRRLICHT_DLL} DESTINATION ${BINDIR})
-			endif()
-			if(USE_GETTEXT)
-				if(DEFINED GETTEXT_DLL)
-					install(FILES ${GETTEXT_DLL} DESTINATION ${BINDIR})
-				endif()
-				if(DEFINED GETTEXT_ICONV_DLL)
-					install(FILES ${GETTEXT_ICONV_DLL} DESTINATION ${BINDIR})
-				endif()
-			endif()
-		endif()
-	endif()
-endif(BUILD_CLIENT)
 
 if(BUILD_SERVER)
 	install(TARGETS ${PROJECT_NAME}server DESTINATION ${BINDIR})

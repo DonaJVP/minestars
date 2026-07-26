@@ -381,12 +381,6 @@ std::unordered_map<uint16_t, HyperMap*> *maps):
 	m_compat_send_original_model = !server->getCompatPlayerModels().empty() &&
 			g_settings->getBool("compat_send_original_model");
 	
-	//Might has to initialize here;
-	abme = new ABME_Threading(this, map);
-	if (abme == nullptr) {
-		throw LuaError("Failed to initialize ABME+T (Active Block Modifier Engine + Threading)");
-	}
-	abme->init();
 	m_cache_abm_interval = g_settings->getFloat("abm_interval");
 }
 
@@ -828,7 +822,7 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime, uin
 void ServerEnvironment::addActiveBlockModifier(ActiveBlockModifier *abm)
 {
 	//m_abms.emplace_back(abm); //abm engine is no longer here
-	abme->registerabm(abm);
+	warningstream << "Called " <<FUNCTION_NAME << " with no handler!" << std::endl;
 }
 
 void ServerEnvironment::addLoadingBlockModifierDef(LoadingBlockModifierDef *lbm)
@@ -837,7 +831,7 @@ void ServerEnvironment::addLoadingBlockModifierDef(LoadingBlockModifierDef *lbm)
 }
 
 std::set<v3s16> *ServerEnvironment::getForceloadedBlocks() {
-	return &abme->ActiveBlocks.m_forceloaded_list; 
+	return nullptr;//&abme->ActiveBlocks.m_forceloaded_list; 
 };
 
 //Helper function for debugging
@@ -1422,29 +1416,27 @@ void ServerEnvironment::step(float dtime)
 		*/
 		// use active_object_send_range_blocks since that is max distance
 		// for active objects sent the client anyway
-		static thread_local const s16 aor = g_settings->getS16("active_object_send_range_blocks"); //active_object_range
+		/*static thread_local const s16 aor = g_settings->getS16("active_object_send_range_blocks"); //active_object_range
 		static thread_local const s16 abr = g_settings->getS16("active_block_range"); //active_block_range
 		std::set<v3s16> blocks_removed;
-		std::set<v3s16> blocks_added;
+		std::set<v3s16> blocks_added;*/
 		//m_active_blocks.update(players, active_block_range, active_object_range,
 		//	blocks_removed, blocks_added);
 
 		//OBJ:::SET_HERE_UPDATE_FUNCTION()
 		
-		if (abme == nullptr) {
-			throw LuaError("Blocked possible Segmentation Fault:\nActive Block Modifier Engine+Threading (ABME+T) is nullptr\nMaybe is a mod in the engine making problems. [At ActiveBlocks.update(., ., ., ., .)]");
-		}
-		
-		abme->ActiveBlocks.update(players, abr, aor, blocks_removed, blocks_added);
+		//abme->ActiveBlocks.update(players, abr, aor, blocks_removed, blocks_added);
 
 		/*
 			Handle removed blocks
 		*/
-
+		
+		//TODO: Make ABM(E) be in builtin - Addons.
+		
 		// Convert active objects that are no more in active blocks to static
 		deactivateFarObjects(false);
 
-		for (const v3s16 &p: blocks_removed) {
+		/*for (const v3s16 &p: blocks_removed) {
 			MapBlock *block = Maps->at(0)->m_map->getBlockNoCreateNoEx(p);
 			if (!block)
 				continue;
@@ -1455,7 +1447,7 @@ void ServerEnvironment::step(float dtime)
 
 		/*
 			Handle added blocks
-		*/
+		
 
 		for (const v3s16 &p: blocks_added) {
 			MapBlock *block = Maps->at(0)->m_map->getBlockOrEmerge(p);
@@ -1466,12 +1458,12 @@ void ServerEnvironment::step(float dtime)
 			}
 
 			activateBlock(block, 0);
-		}
+		}*/
 	}
 
 	/*
 		Mess around in active blocks
-	*/
+	
 	if (m_active_blocks_nodemetadata_interval.step(dtime, m_cache_nodetimer_interval)) {
 
 		float dtime = m_cache_nodetimer_interval;
@@ -1519,7 +1511,7 @@ void ServerEnvironment::step(float dtime)
 		verbosestream << "On step [" << m_cache_abm_interval << ", " << m_abm_timer << "]" << std::endl;
 		abme->step();
 		m_abm_timer = 0.0f;
-	}
+	}*/
 	
 
 	/*
@@ -1578,12 +1570,6 @@ void ServerEnvironment::step(float dtime)
 
 	// Send outdated detached inventories
 	m_server->sendDetachedInventories(PEER_ID_INEXISTENT, true);
-	
-	//Update abm engine
-	if (!abme->already_scaled) {
-		abme->startengine();
-		abme->already_scaled = true;
-	}
 }
 
 /////////////////////////
@@ -2052,7 +2038,7 @@ s_obj.mapid);
 */
 void ServerEnvironment::deactivateFarObjects(bool _force_delete)
 {
-	auto cb_deactivate = [this, _force_delete] (ServerActiveObject *obj, u16 id) {
+	/*auto cb_deactivate = [this, _force_delete] (ServerActiveObject *obj, u16 id) {
 		// force_delete might be overriden per object
 		bool force_delete = _force_delete;
 
@@ -2104,7 +2090,7 @@ void ServerEnvironment::deactivateFarObjects(bool _force_delete)
 
 		/*
 			Update the static data
-		*/
+		
 		if (obj->isStaticAllowed()) {
 			// Create new static object
 			StaticObject s_obj(obj, objectpos);
@@ -2141,7 +2127,7 @@ void ServerEnvironment::deactivateFarObjects(bool _force_delete)
 			/*
 				While changes are always saved, blocks are only marked as modified
 				if the object has moved or different staticdata. (see above)
-			*/
+			
 			bool shall_be_written = (!stays_in_same_block || data_changed);
 			u32 reason = shall_be_written ? MOD_REASON_STATIC_DATA_CHANGED : MOD_REASON_UNKNOWN;
 
@@ -2162,7 +2148,7 @@ void ServerEnvironment::deactivateFarObjects(bool _force_delete)
 		/*
 			If known by some client, set pending deactivation.
 			Otherwise delete it immediately.
-		*/
+		
 		if (pending_delete && !force_delete) {
 			verbosestream << "ServerEnvironment::deactivateFarObjects(): "
 						  << "object id=" << id << " is known by clients"
@@ -2187,7 +2173,7 @@ void ServerEnvironment::deactivateFarObjects(bool _force_delete)
 		return true;
 	};
 
-	m_ao_manager.clear(cb_deactivate);
+	m_ao_manager.clear(cb_deactivate);*/
 }
 
 void ServerEnvironment::deleteStaticFromBlock(
