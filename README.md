@@ -10,3 +10,5 @@ A lightweight and powerful server engine, which allows the usage of external mod
 ### Warnings
 - This engine modding are much insecure by this time, as this was a new idea to include other games be compatible with this, as Minecraft.
 - Multi server protocols may collapse a time if used incorrectly.
+
+**For a programmer with good thinking: Plz do not curse me because of my coding style.**
