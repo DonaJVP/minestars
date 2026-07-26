@@ -25,6 +25,7 @@
 #include <queue>
 #include <random>
 #include <algorithm>
+#include <stdexcept>
 #include "../debug.h"
 #include "../network/mt_connection.h"
 #include "../network/networkpacket.h"
@@ -635,6 +636,15 @@ void Server::init() {
     
     actionstream << "Initializing addons set.." << std::endl;
     sAddons = new servAddons(this);
+    
+    // Init builtin addon.
+    try {
+        sAddons->loadAddon(porting::path_share + "/builtin.so");
+    } catch (std::runtime_error &e) {
+        errorstream << "Could'nt load builtin tools! But running anyways." << std::endl;
+        errorstream << "std::runtime_error: " << e.what() << std::endl;
+    }
+    
     sAddons->initializeSet(m_path_world+"/addons");
     sAddons->setReady();
     actionstream << "Total addons initialized: " << sAddons->getAddonsList().size() << std::endl;
