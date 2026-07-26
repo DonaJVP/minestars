@@ -1,0 +1,33 @@
+#!/usr/bin/env lua
+
+if jit then
+    print("Using LuaJIT")
+else
+    print("Using " .. _VERSION)
+end
+
+local scripts_path = arg[0]:gsub("[\\/]run_tests", "")
+local src_path = scripts_path .. "/../.."
+package.path = ";" .. scripts_path .. "/?.lua;"
+                .. src_path .. "/src/lua/?.lua;"
+                .. src_path .. "/libs/u-test/?.lua"
+
+require "type"
+require "gc"
+require "channel"
+require "thread"
+require "thread-interrupt"
+require "shared-table"
+require "metatable"
+require "type_mismatch"
+require "upvalues"
+require "dump_table"
+require "function"
+
+if os.getenv("STRESS") then
+    require "channel-stress"
+    require "thread-stress"
+    require "gc-stress"
+end
+
+test.summary()

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libeffil.a CMakeFiles/effil.dir/src/cpp/channel.cpp.o CMakeFiles/effil.dir/src/cpp/function.cpp.o "CMakeFiles/effil.dir/src/cpp/garbage-collector.cpp.o" "CMakeFiles/effil.dir/src/cpp/gc-data.cpp.o" CMakeFiles/effil.dir/src/cpp/logger.cpp.o "CMakeFiles/effil.dir/src/cpp/lua-helpers.cpp.o" "CMakeFiles/effil.dir/src/cpp/lua-module.cpp.o" "CMakeFiles/effil.dir/src/cpp/shared-table.cpp.o" "CMakeFiles/effil.dir/src/cpp/stored-object.cpp.o" CMakeFiles/effil.dir/src/cpp/threading.cpp.o
+/usr/bin/ranlib libeffil.a

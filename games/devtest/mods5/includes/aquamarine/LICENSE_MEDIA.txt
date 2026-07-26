@@ -1,0 +1,9 @@
+The textures in this mod are under CC-BY-SA-4.0 License
+
+aquamarine_sword.png based on default_tool_bronzesword.png by celeron55 CC BY-SA 3.0
+aquamarine_pickaxe.png based on default_tool_bronzepick.png by celeron55 CC BY-SA 3.0
+aquamarine_axe.png based on default_tool_bronzeaxe.png by celeron55 CC BY-SA 3.0
+aquamarine_shovel.png based on default_tool_bronzeshovel.png by celeron55 CC BY-SA 3.0
+aquamarine_ore.png based on default_mineral_gold.png by celeron55 CC BY-SA 3.0
+aquamarine_block.png based on default_bronze_block.png by celeron55 CC BY-SA 3.0
+aquamarine_lump.png based on default_bronze_lump.png by celeron55 CC BY-SA 3.0

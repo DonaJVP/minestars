@@ -1,0 +1,19 @@
+set(core
+	${CMAKE_CURRENT_SOURCE_DIR}/init.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/shutdown.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/NetworkEngine.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/banmanager.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/definitions.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/misc.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/spawnpos.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/auth.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sound.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/player.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/playerenvironment_send.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/huds.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/particles.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sky.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/node_callbacks.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/map.cpp
+	PARENT_SCOPE)

@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/user/dev/MultiCraft-2.0.6/lib/chacha/chacha.c
+ecrypt-sync.h
+/home/user/dev/MultiCraft-2.0.6/lib/chacha/ecrypt-sync.h
+stddef.h
+-
+
+/home/user/dev/MultiCraft-2.0.6/lib/chacha/ecrypt-config.h
+limits.h
+-
+
+/home/user/dev/MultiCraft-2.0.6/lib/chacha/ecrypt-machine.h
+stdlib.h
+-
+
+/home/user/dev/MultiCraft-2.0.6/lib/chacha/ecrypt-portable.h
+ecrypt-config.h
+/home/user/dev/MultiCraft-2.0.6/lib/chacha/ecrypt-config.h
+ecrypt-machine.h
+/home/user/dev/MultiCraft-2.0.6/lib/chacha/ecrypt-machine.h
+ecrypt-machine.h
+/home/user/dev/MultiCraft-2.0.6/lib/chacha/ecrypt-machine.h
+ecrypt-machine.h
+/home/user/dev/MultiCraft-2.0.6/lib/chacha/ecrypt-machine.h
+ecrypt-machine.h
+/home/user/dev/MultiCraft-2.0.6/lib/chacha/ecrypt-machine.h
+
+/home/user/dev/MultiCraft-2.0.6/lib/chacha/ecrypt-sync.h
+ecrypt-portable.h
+/home/user/dev/MultiCraft-2.0.6/lib/chacha/ecrypt-portable.h
+

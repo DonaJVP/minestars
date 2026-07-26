@@ -1,0 +1,36 @@
+#pragma once
+#include <cstdint>
+
+// Well, a defined callback should be like this:
+/*
+ * (reinterpret_cast<_aTypeFunction>(AddonsCallbacks[FIXED_CALLBACK_ADDRESS]))(RemotePlayer*,Server*)
+ * Yet, a little large but might be fast enough.
+ * But, what i wanted is something like this: <Simplified>
+ * mov rdi, qword ptr <addr>
+ * mov rsi, qword ptr <addr>
+ * call <addr>
+ */
+
+extern uint64_t *AddonsCallbacks;
+
+#define CALLBACK_ON_SHUTDOWN 0
+#define CALLBACK_ON_JOINPLAYER 1
+#define CALLBACK_ON_NEWPLAYER 2
+#define CALLBACK_ON_LEAVEPLAYER 3
+#define CALLBACK_ON_DIEPLAYER 4
+#define CALLBACK_ON_PLAYEREVENT 5
+#define CALLBACK_ON_PREJOINPLAYER 6
+#define CALLBACK_CAN_BYPASS_USERLIMIT 7
+#define CALLBACK_ON_CHEAT 8
+#define CALLBACK_NODE_ONPUNCH 9
+#define CALLBACK_ONSECONDARYUSE 10
+#define CALLBACK_ON_PLACE 11
+#define CALLBACK_ON_USE 17
+#define CALLBACK_ON_NODE_RECEIVEFIELDS 12
+#define CALLBACK_ON_PLAYER_RECEIVEFIELDS 13
+#define CALLBACK_ON_DIG 16
+#define CALLBACK_NODE_ON_TIMER 18
+
+// Maybe should change this.
+#define CALLBACK_ON_AUTHPLAYER 14
+#define CALLBACK_SET_PASSWORD 15

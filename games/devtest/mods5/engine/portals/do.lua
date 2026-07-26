@@ -1,0 +1,7 @@
+core.log("action", "Loading portals")
+--dofile(MineStars.ModPath.."/portals/API.lua")
+dofile(MineStars.ModPath.."/portals/definitions.lua")
+dofile(MineStars.ModPath.."/portals/heaven.lua")
+core.register_mapgen_script(MineStars.ModPath.."/portals/todofile.lua")
+core.register_mapgen_script(MineStars.ModPath.."/portals/mapgen_roof.lua")
+core.register_mapgen_script(MineStars.ModPath.."/portals/mapgen_end_of_the_line.lua")

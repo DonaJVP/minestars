@@ -1,0 +1,1 @@
+This mod adds several new structures to make your Minetest world more alive.

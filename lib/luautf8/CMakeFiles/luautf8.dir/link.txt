@@ -1,0 +1,2 @@
+/usr/bin/ar qc libluautf8.a CMakeFiles/luautf8.dir/lutf8lib.c.o
+/usr/bin/ranlib libluautf8.a

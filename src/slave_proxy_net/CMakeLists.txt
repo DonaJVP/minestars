@@ -1,0 +1,9 @@
+set(proxy_resources
+	${CMAKE_CURRENT_SOURCE_DIR}/randomchar.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/slave_serv_creator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/multiserver_env.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/definitions_jumper.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/stack_trace_print.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/long_term_obj_manage.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/objects_id_logic.cpp
+	PARENT_SCOPE)

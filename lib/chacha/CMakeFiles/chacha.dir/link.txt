@@ -1,0 +1,2 @@
+/usr/bin/ar qc libchacha.a CMakeFiles/chacha.dir/chacha.c.o
+/usr/bin/ranlib libchacha.a
