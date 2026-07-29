@@ -87,11 +87,11 @@ uint16_t ThisServID = 0; //Changed when the server initializes
 
 class ServSectorPlayers: public Thread {
 public:
-	ServSectorPlayers(ServerEnvironment *s): Thread("Players"), m_env(s) {};
+	ServSectorPlayers(ServerEnvironment *s): Thread("ServPlayers"), m_env(s) {};
 	void *run() {
 		while (!stopRequested()) {
 			m_env->stepPlayers();
-			std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Lua side of this are queued to stepScript
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 	}
 private:
@@ -100,11 +100,12 @@ private:
 
 class ServSectorEnvChild: public Thread {
 public:
-	ServSectorEnvChild(ServerEnvironment *s): Thread("Environment"), m_env(s) {};
+	ServSectorEnvChild(ServerEnvironment *s): Thread("ServEnv"), m_env(s) {};
 	void *run() {
 		while (!stopRequested()) {
-			m_env->step(0.090f);
-			std::this_thread::sleep_for(std::chrono::milliseconds(90));
+			m_env->step(0.01f);
+            m_env->stepScript(0.01f);
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 		return nullptr;
 	}
@@ -112,37 +113,74 @@ private:
 	ServerEnvironment *m_env = nullptr;
 };
 
+class ServSectorCoreStep: public Thread {
+public:
+    friend class Server;
+    ServSectorCoreStep(Server* serv): Thread("ServSave"), m_env(serv->m_env) {
+        m_banmanager = serv->m_banmanager;
+    };
+    void *run() {
+        while (!stopRequested()) {
+            static const float map_timer_and_unload_dtime = 2.92;
+            if (m_map_timer_and_unload_interval.step(0.1f, map_timer_and_unload_dtime)) {
+                // Run Map's timers and unload unused data
+                //m_env->getMap().timerUpdate(map_timer_and_unload_dtime, g_settings->getFloat("server_unload_unused_data_timeout"), U32_MAX);
+            }
+            m_savemap_timer += 0.1f;
+            static thread_local const float save_interval = g_settings->getFloat("server_map_save_interval");
+            if (m_savemap_timer >= save_interval) {
+                m_savemap_timer = 0.0;
+                // Save ban file
+                if (m_banmanager->isModified()) {
+                    m_banmanager->save();
+                }
+                // Save changed parts of map
+                m_env->getMap().save(MOD_STATE_WRITE_NEEDED);
+                // Save players
+                m_env->saveLoadedPlayers();
+                // Save environment metadata
+                m_env->saveMeta();
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+private:
+    ServerEnvironment *m_env = nullptr;
+    BanManager *m_banmanager = nullptr;
+    float m_savemap_timer = 0.0f;
+    IntervalLimiter m_map_timer_and_unload_interval;
+};
+
 // Server Environment Sector
 class ServSectorEnv: public Thread {
 public:
-    ServSectorEnv(Server *s): Thread("Script"), core(s) {
+    ServSectorEnv(Server *s): Thread("S.A.[Recv]"), core(s) {
         SSEC = new ServSectorEnvChild(s->m_env);
         SSEC->start();
         SSP = new ServSectorPlayers(s->m_env);
         SSP->start();
+        SSCP = new ServSectorCoreStep(s);
+        SSCP->start();
     }
     ~ServSectorEnv() {
         SSEC->stop();
         SSEC->wait();
         SSP->stop();
         SSP->wait();
+        SSCP->stop();
+        SSCP->wait();
+        delete SSCP;
         delete SSEC;
         delete SSP;
     }
     void *run() {
         uint16_t timer = 0;
         while (!stopRequested()) {
-            timer++;
-            if (timer > 20) {
-                core->step(0.02);
-                core->m_env->stepScript(0.02);
-                timer = 0;
-            }
             while (!core->QueuedPackets.empty()) {
                 NetworkPacket pkt = core->QueuedPackets.pop();
                 core->ProcessData(&pkt);
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
         }
         return nullptr;
     }
@@ -150,11 +188,12 @@ private:
     Server *core = nullptr;
     ServSectorEnvChild *SSEC = nullptr;
     ServSectorPlayers *SSP = nullptr;
+    ServSectorCoreStep *SSCP = nullptr;
 };
 
 class ServInternal: public Thread {
 public:
-    ServInternal(Server *serv): Thread("Internal"), m_server(serv) {}
+    ServInternal(Server *serv): Thread("ServInternal"), m_server(serv) {}
     void *run() {
         if (m_server->ServersNetworkObject->AreSlave)
             while (!stopRequested()) { m_server->AsyncRunStepSlave(false); }
@@ -826,6 +865,7 @@ void Server::step(float dtime) {
     std::string async_err = m_async_fatal_error.get();
     if (!async_err.empty()) {
         errorstream << async_err << std::endl;
+        async_err.clear();
         //DisconnectAllPlayers(true);
         //ServersNetworkObject->PoweroffServers();
         //throw ServerError("AsyncErr: " + async_err);
@@ -878,14 +918,6 @@ void Server::AsyncRunStepMain(bool initial_step) {
         }
         m_env->reportMaxLagEstimate(max_lag);
     }
-    {
-        static const float map_timer_and_unload_dtime = 2.92;
-        if (m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime)) {
-            MutexAutoLock lock(m_env_mutex);
-            // Run Map's timers and unload unused data
-            m_env->getMap().timerUpdate(map_timer_and_unload_dtime, g_settings->getFloat("server_unload_unused_data_timeout"), U32_MAX);
-        }
-    }
     m_clients.step(dtime);
     if (m_lag_gauge->get() > dtime) {
         m_lag_gauge->decrement(dtime/3);
@@ -931,7 +963,6 @@ void Server::AsyncRunStepMain(bool initial_step) {
         SendActiveObjectRemoveAdd(client, playersao);
     }
     m_clients.unlock();
-    m_mod_storage_save_timer -= dtime;
     /*if (m_mod_storage_save_timer <= 0.0f) {
         m_mod_storage_save_timer = g_settings->getFloat("server_map_save_interval");
         int n = 0;
@@ -958,28 +989,7 @@ void Server::AsyncRunStepMain(bool initial_step) {
     //Map edit events
 
     //(moved to a diff thread)
-    // i ♥️ threads.
-
-    {
-        float &counter = m_savemap_timer;
-        counter += dtime;
-        static thread_local const float save_interval =
-        g_settings->getFloat("server_map_save_interval");
-        if (counter >= save_interval) {
-            counter = 0.0;
-            MutexAutoLock lock(m_env_mutex);
-            // Save ban file
-            if (m_banmanager->isModified()) {
-                m_banmanager->save();
-            }
-            // Save changed parts of map
-            m_env->getMap().save(MOD_STATE_WRITE_NEEDED);
-            // Save players
-            m_env->saveLoadedPlayers();
-            // Save environment metadata
-            m_env->saveMeta();
-        }
-    }
+    // i ♥️ threads
     QueuedPlayersToInitialize.unlock();
     PlayersToInitialize_MTX.lock();
     while (!PlayersToInitialize.empty()) {
