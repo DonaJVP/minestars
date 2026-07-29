@@ -8,7 +8,6 @@ A lightweight and powerful server engine, which allows the usage of external mod
 - Add-ons: Lua mods have been erased completely from the engine to allow Add-ons run correctly. _There will be a LuaTest addon soon.._
 
 ### Warnings
-- This engine modding are much insecure by this time, as this was a new idea to include other games be compatible with this, as Minecraft.
-- Multi server protocols may collapse a time if used incorrectly.
+- This modding are much insecure by this time.
+- Multi server protocols may collapse if used incorrectly.
 
-**For a programmer with good thinking: Plz do not curse me because of my coding style.**
