@@ -524,9 +524,10 @@ void ServerEnvironment::saveLoadedPlayers(bool force)
 		//If the player are playing in other environment, discard him
 		if (player->to_other_server)
 			continue;
-		if (force || player->checkModified() || (player->getPlayerSAO() &&
-				player->getPlayerSAO()->getMeta().isModified())) {
+		if (force || player->checkModified() || (player->getPlayerSAO() && player->getPlayerSAO()->getMeta().isModified())) {
 			try {
+				if (!player)
+					continue;
 				m_player_database->savePlayer(player);
 			} catch (DatabaseException &e) {
 				errorstream << "Failed to save player " << player->getName() << " exception: "
@@ -1298,6 +1299,8 @@ void ServerEnvironment::stepScript(float dtime) {
 	if (!tick_per_step)
 		tick_per_step = 2.0; //default if not assigned
 
+		
+		
 	/*if (serverenvtimer >= (tick_per_step/100)) {
 		//Environment
 		m_script->environment_Step(serverenvtimer);

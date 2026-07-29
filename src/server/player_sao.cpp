@@ -686,7 +686,6 @@ void PlayerSAO::unlinkPlayerSessionAndSave()
 	if (m_player->OnServer->InSlaveServerISPLAYINGHERE) {
 		assert(m_player->getPlayerSAO() == this);
 		m_env->savePlayer(m_player);
-		m_player->setPlayerSAO(NULL);
 		m_env->removePlayer(m_player);
 		return;
 	}
@@ -695,12 +694,11 @@ void PlayerSAO::unlinkPlayerSessionAndSave()
 		assert(m_player->getPlayerSAO() == this);
 		m_player->setPeerId(PEER_ID_INEXISTENT);
 		m_env->savePlayer(m_player);
-		m_player->setPlayerSAO(NULL);
 		m_env->removePlayer(m_player);
 	} else {
 		assert(m_player->getPlayerSAO() == this);
 		m_env->savePlayer(m_player); //Save data
-		m_player->setPlayerSAO(NULL); //Set SAO to NULL
+		m_env->removePlayer(m_player);
 	}
 }
 
