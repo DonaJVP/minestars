@@ -67,11 +67,6 @@ bool servAddons::unloadAddon(const std::string &name) {
         return true;
 }
 
-#include <iostream>
-static void ___TEST(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e) {
-    std::cout << "YESHHH" << std::endl;
-}
-
 bool servAddons::initializeSet(const std::string &pathToDir) {
     SERVER_ADDONS = this;
     // Fill callbacks list.
