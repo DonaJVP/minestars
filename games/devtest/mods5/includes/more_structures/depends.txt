@@ -1,8 +1,0 @@
-default
-xpanes
-vessels
-doors
-beds
-stairs
-lootchests
-lootchests_default

@@ -1,5 +1,0 @@
-luacheck:
-  image: registry.gitlab.com/pipeline-components/luacheck:latest
-  script:
-    - luacheck .
-
