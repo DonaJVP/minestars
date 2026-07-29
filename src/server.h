@@ -573,7 +573,7 @@ private:
 		Something random
 	*/
 
-	void DiePlayer(uint16_t peer_id, const PlayerHPChangeReason &reason);
+	void DiePlayer(uint16_t peer_id, PlayerHPChangeReason &reason);
 	void RespawnPlayer(uint16_t peer_id);
 	void UpdateCrafting(RemotePlayer *player);
 	bool checkInteractDistance(RemotePlayer *player, const f32 d, const std::string &what);

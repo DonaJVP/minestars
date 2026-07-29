@@ -646,7 +646,7 @@ void Server::RespawnPlayer(uint16_t peer_id)
     playersao->setHP(playersao->accessObjectProperties()->hp_max, PlayerHPChangeReason(PlayerHPChangeReason::RESPAWN));
     playersao->setBreath(playersao->accessObjectProperties()->breath_max);
 
-    bool repositioned = (reinterpret_cast<bool*(*)(PlayerSAO*, ClientDeletionReason)>(AddonsCallbacks[CALLBACK_ON_LEAVEPLAYER]))(playersao, CDR_LEAVE);
+    bool repositioned = (reinterpret_cast<bool*(*)(PlayerSAO*)>(AddonsCallbacks[CALLBACK_ON_RESPAWNPLAYER]))(playersao);
     if (!repositioned) {
         // setPos will send the new position to client
         const v3f pos = findSpawnPos();
@@ -659,7 +659,7 @@ void Server::RespawnPlayer(uint16_t peer_id)
 }
 
 
-void Server::DiePlayer(uint16_t peer_id, const PlayerHPChangeReason &reason)
+void Server::DiePlayer(uint16_t peer_id, PlayerHPChangeReason &reason)
 {
     PlayerSAO *playersao = getPlayerSAO(peer_id);
     assert(playersao);
@@ -673,7 +673,7 @@ void Server::DiePlayer(uint16_t peer_id, const PlayerHPChangeReason &reason)
 
     // Trigger scripted stuff
     //m_script->on_dieplayer(playersao, reason);
-    (reinterpret_cast<void*(*)(PlayerSAO*, PlayerHPChangeReason)>(AddonsCallbacks[CALLBACK_ON_LEAVEPLAYER]))(playersao, reason);
+    (reinterpret_cast<void*(*)(PlayerSAO*, PlayerHPChangeReason*)>(AddonsCallbacks[CALLBACK_ON_DIEPLAYER]))(playersao, &reason);
 
     SendPlayerHP(peer_id);
     SendDeathscreen(peer_id, false, v3f(0,0,0));

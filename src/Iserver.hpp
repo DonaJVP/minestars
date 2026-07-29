@@ -375,7 +375,7 @@ public:
 	virtual PlayerSAO *emergePlayer(const char *name, uint16_t peer_id, u16 proto_version) = 0;
 	virtual void handlePeerChanges() = 0;
 	virtual void InitializePlayer(session_t pid) = 0;
-	virtual void DiePlayer(uint16_t peer_id, const PlayerHPChangeReason &reason) = 0;
+	virtual void DiePlayer(uint16_t peer_id, PlayerHPChangeReason &reason) = 0;
 	virtual void RespawnPlayer(uint16_t peer_id) = 0;
 	virtual void UpdateCrafting(RemotePlayer *player) = 0;
 	virtual bool checkInteractDistance(RemotePlayer *player, const f32 d, const std::string &what) = 0;
