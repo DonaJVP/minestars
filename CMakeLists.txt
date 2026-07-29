@@ -12,13 +12,13 @@ set(GCC_MINIMUM_VERSION "5.1")
 set(CLANG_MINIMUM_VERSION "3.5")
 
 # Also remember to set PROTOCOL_VERSION in network/networkprotocol.h when releasing
-set(VERSION_MAJOR 2)
+set(VERSION_MAJOR 1)
 set(VERSION_MINOR 0)
-set(VERSION_PATCH 6)
+set(VERSION_PATCH 0)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
 # Change to false for releases
-set(DEVELOPMENT_BUILD FALSE)
+set(DEVELOPMENT_BUILD true)
 
 set(ENABLE_UPDATE_CHECKER (NOT ${DEVELOPMENT_BUILD}) CACHE BOOL
 	"Whether to enable update checks by default")
@@ -158,6 +158,7 @@ install(FILES "multicraft.conf.example" DESTINATION "${EXAMPLE_CONF_DIR}")
 find_package(GMP REQUIRED)
 find_package(Json REQUIRED)
 add_subdirectory(lib/asmjit)
+add_subdirectory(lib/chacha)
 
 # JsonCPP doesn't compile well on GCC 4.8
 if(NOT ENABLE_SYSTEM_JSONCPP)

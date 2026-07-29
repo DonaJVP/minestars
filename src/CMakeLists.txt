@@ -1,4 +1,4 @@
-project(multicraft)
+project(minestars)
 
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckLibraryExists)
@@ -24,12 +24,6 @@ set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING
 
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
-
-
-if(NOT (BUILD_CLIENT OR BUILD_SERVER))
-	message(WARNING "Neither BUILD_CLIENT nor BUILD_SERVER is set! Setting BUILD_SERVER=true")
-	set(BUILD_SERVER TRUE)
-endif()
 
 option(USE_SDL "Use SDL2 for window management" FALSE)
 option(USE_STATIC_BUILD "Link additional libraries needed for static build" FALSE)
@@ -64,19 +58,6 @@ else()
 	mark_as_advanced(GETTEXT_ICONV_DLL GETTEXT_INCLUDE_DIR GETTEXT_LIBRARY GETTEXT_MSGFMT)
 	message(STATUS "GetText disabled.")
 endif()
-
-
-option(ENABLE_SOUND "Enable sound" FALSE)
-set(USE_SOUND FALSE)
-
-option(ENABLE_GLES "Use OpenGL ES instead of OpenGL" FALSE)
-mark_as_advanced(ENABLE_GLES)
-
-option(ENABLE_TOUCH "Enable Touchscreen support" FALSE)
-if(ENABLE_TOUCH)
-	add_definitions(-DHAVE_TOUCHSCREENGUI)
-endif()
-
 
 option(ENABLE_FREETYPE "Enable FreeType2 (TrueType fonts and basic unicode support)" TRUE)
 set(USE_FREETYPE FALSE)
@@ -363,12 +344,6 @@ if(WIN32)
 	endif(MINGW)
 endif()
 
-
-# Client sources
-if (BUILD_CLIENT)
-	add_subdirectory(client)
-endif(BUILD_CLIENT)
-
 set(client_SRCS
 	${client_SRCS}
 	${common_SRCS}
@@ -381,8 +356,6 @@ set(client_SRCS
 if(BUILD_UNITTESTS)
 	set(client_SRCS ${client_SRCS} ${UNITTEST_CLIENT_SRCS})
 endif()
-
-list(SORT client_SRCS)
 
 # Server sources
 set(server_SRCS
@@ -428,51 +401,53 @@ endif()
 
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 
+add_executable(${PROJECT_NAME}server ${server_SRCS} ${extra_windows_SRCS} ${ASMJIT_SRC})
+target_link_options(${PROJECT_NAME}server PRIVATE -rdynamic)
+if (CMAKE_BUILD_TYPE STREQUAL Debug)
+	target_compile_options(${PROJECT_NAME}server PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+    target_link_options(${PROJECT_NAME}server PRIVATE -fsanitize=address)
+endif()
+add_dependencies(${PROJECT_NAME}server GenerateVersion)
+target_link_libraries(
+	${PROJECT_NAME}server
+	${ZLIB_LIBRARIES}
+	${SQLITE3_LIBRARY}
+	${JSON_LIBRARY}
+	${CHACHA_INCLUDE_DIR}
+	${GMP_LIBRARY}
+	${PLATFORM_LIBS}
+	asmjit
+	chacha
+)
+set_target_properties(${PROJECT_NAME}server PROPERTIES COMPILE_DEFINITIONS "SERVER")
 
-if(BUILD_SERVER)
-	add_executable(${PROJECT_NAME}server ${server_SRCS} ${extra_windows_SRCS} ${ASMJIT_SRC})
-	target_link_options(${PROJECT_NAME}server PRIVATE -rdynamic)
-	add_dependencies(${PROJECT_NAME}server GenerateVersion)
+if (USE_GETTEXT)
+	target_link_libraries(${PROJECT_NAME}server ${GETTEXT_LIBRARY})
+endif()
+if (USE_CURSES)
+	target_link_libraries(${PROJECT_NAME}server ${CURSES_LIBRARIES})
+endif()
+if (USE_POSTGRESQL)
+	target_link_libraries(${PROJECT_NAME}server ${PostgreSQL_LIBRARIES})
+endif()
+if (USE_LEVELDB)
+	target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY})
+endif()
+if (USE_REDIS)
+	target_link_libraries(${PROJECT_NAME}server ${REDIS_LIBRARY})
+endif()
+if (USE_PROMETHEUS)
+	target_link_libraries(${PROJECT_NAME}server ${PROMETHEUS_LIBRARIES})
+endif()
+if (USE_SPATIAL)
+	target_link_libraries(${PROJECT_NAME}server ${SPATIAL_LIBRARY})
+endif()
+if(USE_CURL)
 	target_link_libraries(
 		${PROJECT_NAME}server
-		${ZLIB_LIBRARIES}
-		${SQLITE3_LIBRARY}
-		${JSON_LIBRARY}
-		${LUA_LIBRARY}
-		${GMP_LIBRARY}
-		${PLATFORM_LIBS}
-		asmjit
+		${CURL_LIBRARY}
 	)
-	set_target_properties(${PROJECT_NAME}server PROPERTIES COMPILE_DEFINITIONS "SERVER")
-
-	if (USE_GETTEXT)
-		target_link_libraries(${PROJECT_NAME}server ${GETTEXT_LIBRARY})
-	endif()
-	if (USE_CURSES)
-		target_link_libraries(${PROJECT_NAME}server ${CURSES_LIBRARIES})
-	endif()
-	if (USE_POSTGRESQL)
-		target_link_libraries(${PROJECT_NAME}server ${PostgreSQL_LIBRARIES})
-	endif()
-	if (USE_LEVELDB)
-		target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY})
-	endif()
-	if (USE_REDIS)
-		target_link_libraries(${PROJECT_NAME}server ${REDIS_LIBRARY})
-	endif()
-	if (USE_PROMETHEUS)
-		target_link_libraries(${PROJECT_NAME}server ${PROMETHEUS_LIBRARIES})
-	endif()
-	if (USE_SPATIAL)
-		target_link_libraries(${PROJECT_NAME}server ${SPATIAL_LIBRARY})
-	endif()
-	if(USE_CURL)
-		target_link_libraries(
-			${PROJECT_NAME}server
-			${CURL_LIBRARY}
-		)
-	endif()
-endif(BUILD_SERVER)
+endif()
 
 # Blacklisted locales that don't work.
 # see issue #4638
