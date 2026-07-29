@@ -553,8 +553,6 @@ Server::Server(const string &path, const SubgameSpec &GS, bool ssm, Address addr
     //Server
     if (m_path_world.empty())
         throw ServerError("Supplied empty world path");
-    if (!GS.isValid())
-        throw ServerError("Supplied invalid gamespec");
     //Counters
     m_metrics_backend = std::unique_ptr<MetricsBackend>(new MetricsBackend());
     m_timeofday_gauge = m_metrics_backend->addGauge("minetest_core_timeofday", "Time of day value");
@@ -650,9 +648,7 @@ Server::~Server() {
 
 void Server::init() {
     actionstream << "Server created, INFO: \n"
-    << "Game: " << m_gamespec.id << "\n"
     << "World: " << m_path_world << "\n"
-    << "GamePath: " << m_gamespec.path << "\n"
     << "Addr: " << m_bind_addr.serializeString()
     << endl;
     ServInternal *SI = new ServInternal(this);

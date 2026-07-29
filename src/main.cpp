@@ -17,6 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include "content/subgames.h"
 #include "irrlichttypes.h" // must be included before anything irrlicht, see comment in the file
 #include "irrlicht.h" // createDevice
 #include "irrlichttypes_extrabloated.h"
@@ -124,12 +125,7 @@ FileLogOutput file_log_output;
 
 static OptionList allowed_options;
 
-#if defined(__ANDROID__) || defined(__IOS__)
-int real_main(int argc, char *argv[])
-#else
-int main(int argc, char *argv[])
-#endif
-{
+int main(int argc, char *argv[]) {
 	int retval;
 	debug_set_exception_handler();
 
@@ -162,10 +158,6 @@ int main(int argc, char *argv[])
 		return 1;
 
 	porting::signal_handler_init();
-
-#ifdef __ANDROID__
-	porting::initAndroid();
-#endif
 	porting::initializePaths();
 
 	if (!create_userdata_path()) {
@@ -175,12 +167,6 @@ int main(int argc, char *argv[])
 
 	// Debug handler
 	BEGIN_DEBUG_EXCEPTION_HANDLER
-
-	// List gameids if requested
-	if (cmd_args.exists("gameid") && cmd_args.get("gameid") == "list") {
-		list_game_ids();
-		return 0;
-	}
 
 	// List worlds, world names, and world paths if requested
 	if (cmd_args.exists("worldlist")) {
@@ -201,30 +187,10 @@ int main(int argc, char *argv[])
 	if (!init_common(cmd_args, argc, argv))
 		return 1;
 
-	if (g_settings->getBool("enable_console"))
-		porting::attachOrCreateConsole();
-
-	// Run unit tests
-	if (cmd_args.getFlag("run-unittests")) {
-#if BUILD_UNITTESTS
-		return run_tests();
-#else
-		errorstream << "Unittest support is not enabled in this binary. "
-			<< "If you want to enable it, compile project with BUILD_UNITTESTS=1 flag."
-			<< std::endl;
-#endif
-	}
-
 	GameStartData game_params;
-#ifdef SERVER
+	
 	porting::attachOrCreateConsole();
 	game_params.is_dedicated_server = true;
-#else
-	const bool isServer = cmd_args.getFlag("server");
-	if (isServer)
-		porting::attachOrCreateConsole();
-	game_params.is_dedicated_server = isServer;
-#endif
 
 	if (!game_configure(&game_params, cmd_args))
 		return 1;
@@ -233,14 +199,7 @@ int main(int argc, char *argv[])
 
 	if (game_params.is_dedicated_server)
 		return run_dedicated_server(game_params, cmd_args) ? 0 : 1;
-
-#ifndef SERVER
-	ClientLauncher launcher;
-	retval = launcher.run(game_params, cmd_args) ? 0 : 1;
-#else
-	retval = 0;
-#endif
-
+	
 	// Update configuration file
 	if (!g_settings_path.empty())
 		g_settings->updateConfigFile(g_settings_path.c_str());
@@ -254,15 +213,6 @@ int main(int argc, char *argv[])
 
 	return retval;
 }
-
-#ifdef WIN32
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-		LPSTR lpCmdLine, int nCmdShow)
-{
-	return main(__argc, __argv);
-}
-#endif
-
 
 /*****************************************************************************
  * Startup / Init
@@ -479,25 +429,10 @@ static bool setup_log_params(const Settings &cmd_args)
 static bool create_userdata_path()
 {
 	bool success;
-#if defined(__ANDROID__) || defined(__IOS__)
-	if (fs::PathExists(porting::path_user))
-		success = true;
-#else
 	// Create user data directory
 	success = fs::CreateDir(porting::path_user);
-#endif
-
 	return success;
 }
-
-#if !defined(_MSC_VER) && !defined(SERVER)
-static void language_setting_changed(const std::string &name, void *userdata)
-{
-	init_gettext(porting::path_locale.c_str(),
-		g_settings->get("language"), 0, nullptr);
-	g_client_translations->clear();
-}
-#endif
 
 static bool init_common(const Settings &cmd_args, int argc, char *argv[])
 {
@@ -525,9 +460,6 @@ static bool init_common(const Settings &cmd_args, int argc, char *argv[])
 
 	init_gettext(porting::path_locale.c_str(),
 		g_settings->get("language"), argc, argv);
-#if !defined(_MSC_VER) && !defined(SERVER)
-	g_settings->registerChangedCallback("language", language_setting_changed, nullptr);
-#endif
 
 	return true;
 }
@@ -622,6 +554,7 @@ static void init_log_streams(const Settings &cmd_args)
 	g_logger.addOutputMaxLevel(&file_log_output, log_level);
 }
 
+#include "version.h"
 static bool game_configure(GameParams *game_params, const Settings &cmd_args)
 {
 	game_configure_port(game_params, cmd_args);
@@ -631,7 +564,11 @@ static bool game_configure(GameParams *game_params, const Settings &cmd_args)
 		return false;
 	}
 
-	game_configure_subgame(game_params, cmd_args);
+	//game_configure_subgame(game_params, cmd_args);
+	SubgameSpec spec;
+	spec.name = "MineStars ";
+	spec.name.append(VERSION_STRING);
+	spec.path = ".";
 
 	return true;
 }
@@ -864,8 +801,6 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 
 	verbosestream << _("Using world path") << " ["
 	              << game_params.world_path << "]" << std::endl;
-	verbosestream << _("Using gameid") << " ["
-	              << game_params.game_spec.id << "]" << std::endl;
 
 	// Bind address
 	std::string bind_str = g_settings->get("bind_address");
