@@ -30,6 +30,8 @@ extern uint64_t *AddonsCallbacks;
 #define CALLBACK_ON_PLAYER_RECEIVEFIELDS 13
 #define CALLBACK_ON_DIG 16
 #define CALLBACK_NODE_ON_TIMER 18
+#define CALLBACK_ON_RESPAWNPLAYER 19
+#define CALLBACK_FILLED_SERVER 20
 
 // Maybe should change this.
 #define CALLBACK_ON_AUTHPLAYER 14

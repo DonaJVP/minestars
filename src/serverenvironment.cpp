@@ -813,7 +813,7 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime, uin
 			n = block->getNodeNoEx(elapsed_timer.position);
 			v3s16 p = elapsed_timer.position + block->getPosRelative();
 			//if (m_script->node_on_timer(p, n, elapsed_timer.elapsed))
-			if ((reinterpret_cast<bool(*)(v3s16, MapNode, float)>(AddonsCallbacks[CALLBACK_NODE_ON_TIMER]))(p, n, elapsed_timer.elapsed))
+			if ((reinterpret_cast<bool(*)(v3s16*, MapNode*, float)>(AddonsCallbacks[CALLBACK_NODE_ON_TIMER]))(&p, &n, elapsed_timer.elapsed))
 				block->setNodeTimer(NodeTimer(elapsed_timer.timeout, 0, elapsed_timer.position));
 		}
 	}

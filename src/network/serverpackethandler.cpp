@@ -17,6 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include <cstdint>
 #include <unordered_map>
 #include <sstream>
 #include <iostream>
@@ -196,7 +197,7 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 	if (false){
 		std::string reason;
 		//m_script->on_prejoinplayer(playername, addr_s, &reason)
-		if ((reinterpret_cast<bool(*)(const char*, std::string, std::string*)>(AddonsCallbacks[CALLBACK_ON_PREJOINPLAYER]))(playername, addr_s, &reason)) {
+		if ((reinterpret_cast<bool(*)(const char*, const char*, std::string*)>(AddonsCallbacks[CALLBACK_ON_PREJOINPLAYER]))(playername, addr_s.c_str(), &reason)) {
 			actionstream << "Server: Player with the name \"" << playerName <<
 				"\" tried to connect from " << addr_s <<
 				" but it was disallowed for the following reason: " << reason <<
@@ -211,7 +212,7 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 
 	// Enforce user limit.
 	// Don't enforce for users that have some admin right or mod permits it.
-	if (m_clients.isUserLimitReached() && playername != g_settings->get("name") && !(reinterpret_cast<bool(*)(const char*, std::string)>(AddonsCallbacks[CALLBACK_ON_PLAYEREVENT]))(playername, addr_s)) {
+	if (m_clients.isUserLimitReached() && playername != g_settings->get("name") && !(reinterpret_cast<bool(*)(const char*, const char*)>(AddonsCallbacks[CALLBACK_FILLED_SERVER]))(playername, addr_s.c_str())) {
 		actionstream << "Server: " << playername << " tried to join from " <<
 			addr_s << ", but there are already max_users=" <<
 			g_settings->getU16("max_users") << " players." << std::endl;
@@ -1634,7 +1635,7 @@ getNodeBlockPos(pointed.node_abovesurface), false);
 			}
 
 			//if (n.getContent() != CONTENT_IGNORE)
-			//	(reinterpret_cast<void(*)(v3s16, MapNode, PlayerSAO*, PointedThing)>(AddonsCallbacks[CALLBACK_NODE_ONPUNCH]))(p_under, n, playersao, pointed);
+			//	(reinterpret_cast<void(*)(v3s16*, MapNode*, PlayerSAO*, PointedThing*)>(AddonsCallbacks[CALLBACK_NODE_ONPUNCH]))(&p_under, &n, playersao, &pointed);
 			
 			_callback_ACT1_B oP = getNodeDefManager()->get(n.getContent()).on_punch;
 			bool _res = false;
@@ -1780,7 +1781,7 @@ getNodeBlockPos(pointed.node_abovesurface), false);
 		if (is_valid_dig && n.getContent() != CONTENT_IGNORE) {
 			_callback_ACT1_B cbkl = m_nodedef->get(n.getContent()).on_dig;
 			if (cbkl && cbkl(tool, playersao, pointed))
-				(reinterpret_cast<void(*)(v3s16, MapNode, PlayerSAO*)>(AddonsCallbacks[CALLBACK_ON_DIG]))(p_under, n, playersao);
+				(reinterpret_cast<void(*)(v3s16*, MapNode*, PlayerSAO*)>(AddonsCallbacks[CALLBACK_ON_DIG]))(&p_under, &n, playersao);
 		}
 			
 			//m_script->node_on_dig(p_under, n, playersao);
@@ -1819,7 +1820,7 @@ getNodeBlockPos(pointed.node_abovesurface), false);
 				ClientDataTable.Get(playerid)->m_time_from_building = 0.0f;
 		}
 
-		(reinterpret_cast<bool(*)(ItemStack, PlayerSAO*, PointedThing)>(AddonsCallbacks[CALLBACK_ON_PLACE]))(selected_item, playersao, pointed);
+		(reinterpret_cast<bool(*)(ItemStack*, PlayerSAO*, PointedThing*)>(AddonsCallbacks[CALLBACK_ON_PLACE]))(&selected_item, playersao, &pointed);
 		
 		// Seek main func.
 		_callback_ACT1 cblkOP = getNodeDefManager()->get(selected_item.name).on_place;
@@ -1878,7 +1879,7 @@ getNodeBlockPos(pointed.node_abovesurface), false);
 				<< ", pointing at " << pointed.dump() << std::endl;
 
 		//if (m_script->item_OnUse(selected_item, playersao, pointed)) {
-		if ((reinterpret_cast<bool(*)(ItemStack, PlayerSAO*, PointedThing)>(AddonsCallbacks[CALLBACK_ON_USE]))(selected_item, playersao, pointed)) {
+		if ((reinterpret_cast<bool(*)(ItemStack*, PlayerSAO*, PointedThing*)>(AddonsCallbacks[CALLBACK_ON_USE]))(&selected_item, playersao, &pointed)) {
 			// Apply returned ItemStack
 			if (playersao->setWieldedItem(selected_item))
 				SendInventory(playersao, true);
@@ -1897,7 +1898,7 @@ getNodeBlockPos(pointed.node_abovesurface), false);
 
 		pointed.type = POINTEDTHING_NOTHING; // can only ever be NOTHING
 
-		if ((reinterpret_cast<bool(*)(ItemStack, PlayerSAO*, PointedThing)>(AddonsCallbacks[CALLBACK_ONSECONDARYUSE]))(selected_item, playersao, pointed)) {
+		if ((reinterpret_cast<bool(*)(ItemStack*, PlayerSAO*, PointedThing*)>(AddonsCallbacks[CALLBACK_ONSECONDARYUSE]))(&selected_item, playersao, &pointed)) {
 			if (playersao->setWieldedItem(selected_item))
 				SendInventory(playersao, true);
 		}
@@ -2014,7 +2015,7 @@ void Server::handleCommand_NodeMetaFields(NetworkPacket* pkt)
 
 
 	//m_script->node_on_receive_fields(p, formname, fields, playersao);
-	(reinterpret_cast<void(*)(v3s16, std::string, StringMap, PlayerSAO*)>(AddonsCallbacks[CALLBACK_ON_NODE_RECEIVEFIELDS]))(p, formname, fields, playersao);
+	(reinterpret_cast<void(*)(v3s16*, const char*, StringMap*, PlayerSAO*)>(AddonsCallbacks[CALLBACK_ON_NODE_RECEIVEFIELDS]))(&p, formname.c_str(), &fields, playersao);
 }
 
 void Server::handleCommand_InventoryFields(NetworkPacket* pkt)
@@ -2065,7 +2066,7 @@ void Server::handleCommand_InventoryFields(NetworkPacket* pkt)
 	}
 
 	if (client_formspec_name.empty()) { // pass through inventory submits
-		(reinterpret_cast<void(*)(PlayerSAO*, std::string, StringMap)>(AddonsCallbacks[CALLBACK_ON_PLAYER_RECEIVEFIELDS]))(playersao, client_formspec_name, fields);
+		(reinterpret_cast<void(*)(PlayerSAO*, const char*, StringMap*)>(AddonsCallbacks[CALLBACK_ON_PLAYER_RECEIVEFIELDS]))(playersao, client_formspec_name.c_str(), &fields);
 		//m_script->on_playerReceiveFields(playersao, client_formspec_name, fields);
 		return;
 	}
@@ -2152,7 +2153,7 @@ void Server::handleCommand_FirstSrp(NetworkPacket* pkt)
 		//m_script->on_authplayer(playername, addr_s, true);
 		//abort();
 		acceptAuth(peer_id, false);
-		(reinterpret_cast<void(*)(std::string, std::string, bool)>(AddonsCallbacks[CALLBACK_ON_AUTHPLAYER]))(playername, addr_s, true);
+		(reinterpret_cast<void(*)(const char*, const char*, bool)>(AddonsCallbacks[CALLBACK_ON_AUTHPLAYER]))(playername.c_str(), addr_s.c_str(), true);
 		//abort();
 		
 	} else {
@@ -2174,7 +2175,7 @@ void Server::handleCommand_FirstSrp(NetworkPacket* pkt)
 		}
 
 		std::string pw_db_field = encode_srp_verifier(verification_key, salt);
-		bool success = (reinterpret_cast<bool(*)(std::string, std::string)>(AddonsCallbacks[CALLBACK_SET_PASSWORD]))(playername, pw_db_field);
+		bool success = (reinterpret_cast<bool(*)(const char*, const char*)>(AddonsCallbacks[CALLBACK_SET_PASSWORD]))(playername.c_str(), pw_db_field.c_str());
 		//m_script->setPassword(playername, pw_db_field);
 		if (success) {
 			actionstream << playername << " changes password" << std::endl;
@@ -2356,13 +2357,13 @@ void Server::handleCommand_SrpBytesM(NetworkPacket* pkt)
 		actionstream << "Server: User " << playername << " at " << addr_s
 			<< " supplied wrong password (auth mechanism: SRP)." << std::endl;
 		//m_script->on_authplayer(playername, addr_s, false);
-		(reinterpret_cast<void(*)(std::string, std::string, bool)>(AddonsCallbacks[CALLBACK_ON_AUTHPLAYER]))(playername, addr_s, false);
+		(reinterpret_cast<void(*)(const char*, const char*, bool)>(AddonsCallbacks[CALLBACK_ON_AUTHPLAYER]))(playername.c_str(), addr_s.c_str(), false);
 		DenyAccess(peer_id, SERVER_ACCESSDENIED_WRONG_PASSWORD);
 		return;
 	}
 
-	/*if (client->create_player_on_auth_success) {
-		m_script->createAuth(playername, client->enc_pwd);
+	/*if (client->create_player_on_auth_success) { //TODO
+		data->createAuth(playername, client->enc_pwd);
 
 		if (!m_script->getAuth(playername, nullptr, nullptr)) {
 			errorstream << "Server: " << playername <<
@@ -2375,7 +2376,9 @@ void Server::handleCommand_SrpBytesM(NetworkPacket* pkt)
 	}*/
 
 	//m_script->on_authplayer(playername, addr_s, true);
-	(reinterpret_cast<void(*)(std::string, std::string, bool)>(AddonsCallbacks[CALLBACK_ON_AUTHPLAYER]))(playername, addr_s, true);
 	acceptAuth(peer_id, wantSudo);
+	//sm volatile ( "ud2" );
+	(reinterpret_cast<void(*)(const char*, const char*, uint64_t)>(AddonsCallbacks[CALLBACK_ON_AUTHPLAYER]))(playername.c_str(), addr_s.c_str(), true);
+	
 }
 
