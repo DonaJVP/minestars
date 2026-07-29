@@ -83,8 +83,10 @@ void Server::SendPlayerHPOrDie(PlayerSAO *playersao, const PlayerHPChangeReason 
     bool is_alive = !playersao->isDead();
     if (is_alive)
         SendPlayerHP(id);
-    else
-        DiePlayer(id, reason);
+    else {
+        PlayerHPChangeReason rs = reason;
+        DiePlayer(id, rs);
+    }
 }
 
 void Server::SendHP(uint16_t peer_id, uint16_t hp) {
