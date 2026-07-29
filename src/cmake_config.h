@@ -2,20 +2,20 @@
 
 #pragma once
 
-#define PROJECT_NAME "multicraft"
+#define PROJECT_NAME "minestars"
 #define PROJECT_NAME_C "MineStars"
-#define VERSION_MAJOR 2
+#define VERSION_MAJOR 1
 #define VERSION_MINOR 0
-#define VERSION_PATCH 6
+#define VERSION_PATCH 0
 #define VERSION_EXTRA ""
-#define VERSION_STRING "2.0.6-debug"
-#define PRODUCT_VERSION_STRING "2.0"
+#define VERSION_STRING "1.0.0-dev-debug"
+#define PRODUCT_VERSION_STRING "1.0"
 #define STATIC_SHAREDIR "."
 #define STATIC_LOCALEDIR "locale"
 #define BUILD_TYPE "Debug"
 #define ICON_DIR "unix/icons"
 #define RUN_IN_PLACE 1
-#define DEVELOPMENT_BUILD 0
+#define DEVELOPMENT_BUILD 1
 #define ENABLE_UPDATE_CHECKER 1
 #define USE_GETTEXT 1
 #define USE_CURL 1
@@ -24,7 +24,7 @@
 #define USE_CURSES 1
 #define USE_LEVELDB 1
 #define USE_SQLITE 1
-#define USE_LUAJIT 1
+#define USE_LUAJIT 0
 #define USE_POSTGRESQL 1
 #define USE_PROMETHEUS 0
 #define USE_SPATIAL 1

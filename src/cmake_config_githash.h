@@ -3,4 +3,4 @@
 
 #pragma once
 
-#define VERSION_GITHASH "2.0.6-debug"
+#define VERSION_GITHASH "1.0.0-dev-debug-a1532e6-dirty"

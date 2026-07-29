@@ -477,6 +477,8 @@ public:
 	bool existsMap(uint16_t mapid) { return Maps.find(mapid) != Maps.end(); }
 	/* mark blocks not sent for all clients */
 	void SetBlocksNotSent(std::map<v3s16, MapBlock *>& block);
+	// Ban checking
+	BanManager *m_banmanager = nullptr;
 private:
 	friend class EmergeThread;
 	friend class RemoteClient;
@@ -632,9 +634,6 @@ private:
 	// Reference to the server map until ServerEnvironment is initialized
 	// after that this variable must be a nullptr
 	ServerMap *m_startup_server_map = nullptr;
-
-	// Ban checking
-	BanManager *m_banmanager = nullptr;
 
 	// Rollback manager (behind m_env_mutex)
 	//IRollbackManager *m_rollback = nullptr;

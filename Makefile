@@ -107,7 +107,7 @@ rebuild_cache/fast: rebuild_cache
 
 # Special rule for the target list_install_components
 list_install_components:
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Available install components are: \"Docs\" \"SUBGAME_MINETEST_GAME\" \"SUBGAME_MINIMAL\" \"Unspecified\""
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Available install components are: \"Unspecified\""
 .PHONY : list_install_components
 
 # Special rule for the target list_install_components
@@ -195,45 +195,6 @@ jsoncpp/fast:
 .PHONY : jsoncpp/fast
 
 #=============================================================================
-# Target rules for targets named chacha
-
-# Build rule for target.
-chacha: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 chacha
-.PHONY : chacha
-
-# fast build rule for target.
-chacha/fast:
-	$(MAKE) $(MAKESILENT) -f lib/chacha/CMakeFiles/chacha.dir/build.make lib/chacha/CMakeFiles/chacha.dir/build
-.PHONY : chacha/fast
-
-#=============================================================================
-# Target rules for targets named luautf8
-
-# Build rule for target.
-luautf8: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 luautf8
-.PHONY : luautf8
-
-# fast build rule for target.
-luautf8/fast:
-	$(MAKE) $(MAKESILENT) -f lib/luautf8/CMakeFiles/luautf8.dir/build.make lib/luautf8/CMakeFiles/luautf8.dir/build
-.PHONY : luautf8/fast
-
-#=============================================================================
-# Target rules for targets named luachacha
-
-# Build rule for target.
-luachacha: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 luachacha
-.PHONY : luachacha
-
-# fast build rule for target.
-luachacha/fast:
-	$(MAKE) $(MAKESILENT) -f lib/luachacha/CMakeFiles/luachacha.dir/build.make lib/luachacha/CMakeFiles/luachacha.dir/build
-.PHONY : luachacha/fast
-
-#=============================================================================
 # Target rules for targets named asmjit
 
 # Build rule for target.
@@ -245,6 +206,19 @@ asmjit: cmake_check_build_system
 asmjit/fast:
 	$(MAKE) $(MAKESILENT) -f lib/asmjit/CMakeFiles/asmjit.dir/build.make lib/asmjit/CMakeFiles/asmjit.dir/build
 .PHONY : asmjit/fast
+
+#=============================================================================
+# Target rules for targets named chacha
+
+# Build rule for target.
+chacha: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 chacha
+.PHONY : chacha
+
+# fast build rule for target.
+chacha/fast:
+	$(MAKE) $(MAKESILENT) -f lib/chacha/CMakeFiles/chacha.dir/build.make lib/chacha/CMakeFiles/chacha.dir/build
+.PHONY : chacha/fast
 
 #=============================================================================
 # Target rules for targets named GenerateVersion
@@ -260,17 +234,17 @@ GenerateVersion/fast:
 .PHONY : GenerateVersion/fast
 
 #=============================================================================
-# Target rules for targets named multicraftserver
+# Target rules for targets named minestarsserver
 
 # Build rule for target.
-multicraftserver: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 multicraftserver
-.PHONY : multicraftserver
+minestarsserver: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 minestarsserver
+.PHONY : minestarsserver
 
 # fast build rule for target.
-multicraftserver/fast:
-	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/multicraftserver.dir/build.make src/CMakeFiles/multicraftserver.dir/build
-.PHONY : multicraftserver/fast
+minestarsserver/fast:
+	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/minestarsserver.dir/build.make src/CMakeFiles/minestarsserver.dir/build
+.PHONY : minestarsserver/fast
 
 #=============================================================================
 # Target rules for targets named translations
@@ -304,9 +278,7 @@ help:
 	@echo "... asmjit"
 	@echo "... chacha"
 	@echo "... jsoncpp"
-	@echo "... luachacha"
-	@echo "... luautf8"
-	@echo "... multicraftserver"
+	@echo "... minestarsserver"
 .PHONY : help
 
 
