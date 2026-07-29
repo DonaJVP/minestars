@@ -1694,9 +1694,11 @@ getNodeBlockPos(pointed.node_abovesurface), false);
 		// Only digging of nodes
 		if (pointed.type != POINTEDTHING_NODE)
 			return;
+		if (!playersao)
+			return;
 		bool pos_ok;
 		v3s16 p_under = pointed.node_undersurface;
-		MapNode n = m_env->getMap(PlayerToMap.Get(m_env->getPlayer(playerid)->getName()).mapid).getNode(p_under, &pos_ok);
+		MapNode n = m_env->getMap(playersao->getMapId()).getNode(p_under, &pos_ok);
 		if (!pos_ok) {
 			infostream << "Server: Not finishing digging: Node not found. "
 				"Adding block to emerge queue." << std::endl;
